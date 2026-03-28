@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>VW Style CAN Dashboard</title>
+<style>
+body {
+    background:#111;
+    color:white;
+    font-family:Arial;
+    display:flex;
+    flex-direction: column;   /* <— Gauges untereinander */
+    align-items: center;      /* <— zentriert */
+    gap:0px;
+    padding-top:0px;
+}
+canvas {
+    background:#111;
+}
+</style>
+</head>
+<body>
+
+<canvas id="gauge_pedal"></canvas>
+<canvas id="gauge_rpm"></canvas>
+<canvas id="gauge_boost"></canvas>
+
+<script>
+// ------------------------------------------------------------
+// GENERISCHE GAUGE-FUNKTION (VW-Style, farbige Bereiche)
+// ------------------------------------------------------------
+function createGauge(canvasId, label, minValue, maxValue, majorTicks, minorTicks, colorZones) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    canvas.width = 300;
+    canvas.height = 300;
+
+    const CX = 150;
+    const CY = 150;
+    const R  = 145;
+
+    const circStart = 0.9;
+    const circEnd = 2.1;
+
+    // 210° → 330° (im Uhrzeigersinn)
+    function valueToAngle(v) {
+        const start = circStart * Math.PI;   // 210°
+        const end   = circEnd * Math.PI;   // 330°
+        const frac = (v - minValue) / (maxValue - minValue);
+        return start + frac * (end - start);
+    }
+
+    function drawBackground() {
+        ctx.clearRect(0,0,300,300);
+
+        // Hintergrund
+        ctx.beginPath();
+        ctx.arc(CX, CY, R, 0, 2*Math.PI);
+        ctx.fillStyle = "#111";
+        ctx.fill();
+
+        // ------------------------------------------------------------
+        // Farbige Bereiche (VW-Style)
+        // ------------------------------------------------------------
+        for (const zone of colorZones) {
+            const a1 = valueToAngle(zone.from);
+            const a2 = valueToAngle(zone.to);
+
+            ctx.beginPath();
+            ctx.strokeStyle = zone.color;
+            ctx.lineWidth = 10;
+            ctx.arc(CX, CY, R - 5, a1, a2);
+            ctx.stroke();
+        }
+
+        // Skalenbogen
+        ctx.strokeStyle = "#555";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(CX, CY, R, circStart*Math.PI, circEnd*Math.PI);
+        ctx.stroke();
+
+        // Große Ticks + Labels
+        ctx.fillStyle = "white";
+        ctx.font = "14px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        const majorStep = (maxValue - minValue) / (majorTicks - 1);
+        const minorStep = majorStep / (minorTicks + 1);
+
+        for (let i = 0; i < majorTicks; i++) {
+            const val = minValue + i * majorStep;
+            const ang = valueToAngle(val);
+
+            const x1 = CX + (R - 15) * Math.cos(ang);
+            const y1 = CY + (R - 15) * Math.sin(ang);
+            const x2 = CX + R * Math.cos(ang);
+            const y2 = CY + R * Math.sin(ang);
+
+            // großer Tick
+            ctx.strokeStyle = "#ccc";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            // Label (dezimal falls nötig)
+            const labelText =
+                (maxValue <= 10 ? val.toFixed(1) : Math.round(val)).toString();
+
+            const lx = CX + (R - 35) * Math.cos(ang);
+            const ly = CY + (R - 35) * Math.sin(ang);
+            ctx.fillText(labelText, lx, ly);
+
+            // kleine Ticks
+            if (i < majorTicks - 1) {
+                for (let j = 1; j <= minorTicks; j++) {
+                    const subVal = val + j * minorStep;
+                    const subAng = valueToAngle(subVal);
+
+                    const sx1 = CX + (R - 10) * Math.cos(subAng);
+                    const sy1 = CY + (R - 10) * Math.sin(subAng);
+                    const sx2 = CX + R * Math.cos(subAng);
+                    const sy2 = CY + R * Math.sin(subAng);
+
+                    ctx.strokeStyle = "#777";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(sx1, sy1);
+                    ctx.lineTo(sx2, sy2);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Gauge-Beschriftung
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        ctx.fillText(label, CX, CY + 70);
+    }
+
+    drawBackground();
+
+    return {
+        draw: function(value) {
+            drawBackground();
+
+            const ang = valueToAngle(value);
+
+            // Zeiger
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(CX, CY);
+            ctx.lineTo(CX + (R-5)*Math.cos(ang), CY + (R-5)*Math.sin(ang));
+            ctx.stroke();
+
+            // Mittelpunkt
+            ctx.beginPath();
+            ctx.arc(CX, CY, 5, 0, 2*Math.PI);
+            ctx.fillStyle = "black";
+            ctx.fill();
+        }
+    };
+}
+
+// ------------------------------------------------------------
+// GAUGES ERZEUGEN (VW-Style Farbzonen)
+// ------------------------------------------------------------
+
+// Pedal: Grün 0–60, Gelb 60–80, Rot 80–100
+const pedalGauge = createGauge(
+    "gauge_pedal", "Pedal (%)",
+    0, 100, 6, 4,
+    [
+        {from:0, to:80, color:"#0f0"},
+        {from:80, to:90, color:"#ff0"},
+        {from:90, to:100, color:"#f00"}
+    ]
+);
+
+// RPM: Grün 0–3000, Gelb 3000–4000, Rot 4000–5000
+const rpmGauge = createGauge(
+    "gauge_rpm", "RPM",
+    0, 5000, 6, 4,
+    [
+        {from:0, to:3500, color:"#0f0"},
+        {from:3500, to:4000, color:"#ff0"},
+        {from:4000, to:5000, color:"#f00"}
+    ]
+);
+
+// Boost: Grün 0–1.2, Gelb 1.2–1.8, Rot 1.8–2.5
+const boostGauge = createGauge(
+    "gauge_boost", "Boost (bar)",
+    0, 2.5, 6, 4,
+    [
+        {from:0, to:1.7, color:"#0f0"},
+        {from:1.7, to:2.1, color:"#ff0"},
+        {from:2.1, to:2.5, color:"#f00"}
+    ]
+);
+
+// ------------------------------------------------------------
+// NULLSTELLUNG
+// ------------------------------------------------------------
+pedalGauge.draw(0);
+rpmGauge.draw(0);
+boostGauge.draw(0);
+
+// ------------------------------------------------------------
+// LIVE-DATEN (SSE)
+// ------------------------------------------------------------
+const evtSource = new EventSource("/stream");
+
+evtSource.onmessage = function(event) {
+    let data = JSON.parse(event.data);
+
+    pedalGauge.draw(data.pedal);
+    rpmGauge.draw(data.rpm);
+    boostGauge.draw(data.boost);
+};
+</script>
+
+</body>
+</html>
