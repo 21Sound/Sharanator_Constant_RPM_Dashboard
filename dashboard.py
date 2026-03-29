@@ -3,14 +3,19 @@ import can
 import time
 import json
 import os
+import sys
 
-os.system("sudo ip link set can0 down")
-os.system("sudo ip link set can0 up type can bitrate 500000")
+print(sys.platform.lower())
+
+if "linux" in sys.platform.lower():
+    os.system("sudo ip link set can0 down")
+    os.system("sudo ip link set can0 up type can bitrate 500000")
 
 app = Flask("Sharanator Dashboard")
 
 # CAN-Interface öffnen
-bus = can.interface.Bus(channel='can0', bustype='socketcan')
+if "linux" in sys.platform.lower():
+    bus = can.interface.Bus(channel='can0', bustype='socketcan')
 
 # ------------------------------------------------------------
 # HTML wird direkt eingebettet (du kannst es auch aus Datei laden)
@@ -28,29 +33,32 @@ def index():
 @app.route("/stream")
 def stream():
     def event_stream():
-        while True:
-            msg = bus.recv(timeout=0.01)
-            if msg is None:
-                continue
 
-            # Beispiel: du musst hier deine echten CAN-IDs eintragen
-            if msg.arbitration_id == 0x280:   # Pedal
+        pedalPercent = 0.0
+        engineRPM = 0.0
+        boost = 0.0
 
-                pedalPercent = msg.data[5] * 100.0 / 0xFA
+        if "linux" in sys.platform.lower():
+            while True:
+                msg = bus.recv(timeout=0.01)
+                if msg is None:
+                    continue
 
-                engineRPM = ( (msg.data[3]<<8) + msg.data[2] ) * 0.25
+                if msg.arbitration_id == 0x280:   # Pedal
 
-                boost = 0.0
+                    pedalPercent = msg.data[5] * 100.0 / 0xFA
+                    engineRPM = ( (msg.data[3]<<8) + msg.data[2] ) * 0.25
+                    boost = 0.0
 
-                payload = {
-                    "pedal": pedalPercent,
-                    "rpm": engineRPM,
-                    "boost": boost
-                }
+                    payload = {
+                        "pedal": pedalPercent,
+                        "rpm": engineRPM,
+                        "boost": boost
+                    }
 
-                yield f"data: {json.dumps(payload)}\n\n"
+                    yield f"data: {json.dumps(payload)}\n\n"
 
-                time.sleep(0)
+                    time.sleep(0)
 
     return Response(event_stream(), mimetype="text/event-stream")
 
