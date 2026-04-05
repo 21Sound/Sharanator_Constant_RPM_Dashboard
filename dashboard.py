@@ -1,9 +1,19 @@
-from flask import Flask, Response, render_template_string
+from flask import Flask, Response, request, jsonify, render_template_string
 import can
 import time
 import json
 import os
 import sys
+
+params = {
+"rpm_target": 1000,
+"pedal_input": 0.0,
+"tau_att": 0.1,
+"tau_rel": 0.1,
+"pedal_gain": 0.0,
+}
+
+print(params.keys())
 
 print(sys.platform.lower())
 
@@ -15,7 +25,7 @@ app = Flask("Sharanator Dashboard")
 
 # CAN-Interface öffnen
 if "linux" in sys.platform.lower():
-    bus = can.interface.Bus(channel='can0', bustype='socketcan')
+    CAN_BUS_INST = can.interface.Bus(channel='can0', bustype='socketcan')
 
 # ------------------------------------------------------------
 # HTML wird direkt eingebettet (du kannst es auch aus Datei laden)
@@ -26,6 +36,19 @@ with open("dashboard.html", "r", encoding="utf-8") as f:
 @app.route("/")
 def index():
     return render_template_string(html_page)
+
+@app.post("/update")
+def update():
+    data = request.get_json()
+    for key, value in data.items():
+        if key in params.keys():
+            params[key] = value
+            print("\n Updated params:" + str(params) + "\n")
+    return jsonify(success=True)
+
+@app.get("/values")
+def values():
+    return jsonify(params)
 
 # ------------------------------------------------------------
 # Server-Sent Events Stream
@@ -40,7 +63,7 @@ def stream():
 
         if "linux" in sys.platform.lower():
             while True:
-                msg = bus.recv(timeout=0.01)
+                msg = CAN_BUS_INST.recv(timeout=0.01)
                 if msg is None:
                     continue
 
@@ -57,8 +80,6 @@ def stream():
                     }
 
                     yield f"data: {json.dumps(payload)}\n\n"
-
-                    time.sleep(0)
 
     return Response(event_stream(), mimetype="text/event-stream")
 

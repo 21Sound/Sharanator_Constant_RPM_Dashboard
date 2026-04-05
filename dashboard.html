@@ -6,115 +6,128 @@
 
 <style>
 
-#dashboard {
-    display: flex;
-    flex-direction: row;     /* nebeneinander */
-    gap: 40px;
-    justify-content: center;
-    align-items: flex-start; /* Fader oben ausrichten */
-    width: 100%;
+html, body {
+    margin: 0;
+    padding: 0;
+    background: #111;
+    color: white;
+    font-family: Arial;
+    overflow: hidden;
 }
 
+#outer {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: 900px;
+    height: 500px;
+    transform-origin: center center;
+    transform: translate(-50%, -50%) scale(var(--scale));
+    overflow: hidden;
+}
+
+#wrapper {
+    width: 100%;
+    height: 100%;
+}
+
+/* Dashboard-Inhalt */
+#dashboard {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
+}
+
+/* Gauges links */
 #gauges {
     display: flex;
-    flex-direction: column;  /* Gauges untereinander */
-    gap: 0px;
+    flex-direction: column;
+    gap: 20px;
 }
 
+#gauges1, #gauges2 {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+/* Controls rechts */
 #controls {
     display: flex;
     flex-direction: column;
-    gap: 40px;
-    margin-top: 20px;
-    width: 250px;            /* Fader-Breite */
+    gap: 20px;
+    width: 250px;
 }
 
+/* Fader */
 .fader {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.fader label {
-    font-size: 18px;
-    margin-bottom: 4px;
-}
-
-.fader input[type=range] {
-    width: 100%;
-}
-
-.fader input[type=number] {
-    width: 100%;
-    padding: 6px;
-    font-size: 16px;
-    background: #222;
-    color: white;
-    border: 1px solid #555;
-    border-radius: 4px;
-}
-
-body {
-    background:#111;
-    color:white;
-    font-family:Arial;
-    display:flex;
-    flex-direction: column;   /* <— Gauges untereinander */
-    align-items: center;      /* <— zentriert */
-    gap:0px;
-    padding-top:0px;
-}
 canvas {
-    background:#111;
+    width: 200px;
+    height: 200px;
+    background: #111;
 }
+
 </style>
 </head>
 <body>
 
-<div id="dashboard">
-    <div id="gauges1">
-        <!-- deine drei Canvas-Gauges -->
-        <canvas id="gauge_pedal"></canvas>
-        <canvas id="gauge_rpm"></canvas>
-        <canvas id="gauge_kmph"></canvas>
-    </div>
+<div id="outer">
+    <div id="wrapper">
+        <div id="dashboard">
 
-    <div id="gauges2">
-        <!-- deine drei Canvas-Gauges -->
-        <canvas id="gauge_power"></canvas>
-        <canvas id="gauge_torque"></canvas>
-        <canvas id="gauge_fuel"></canvas>
-    </div>
+            <div id="gauges">
+                <div id="gauges1">
+                    <canvas id="gauge_pedal"></canvas>
+                    <canvas id="gauge_rpm"></canvas>
+                    <canvas id="gauge_kmph"></canvas>
+                </div>
 
-    <div id="controls">
-        <div class="fader">
-            <label>Ziel-Drehzahl (RPM)</label>
-            <input type="range" id="rpm_target" min="0" max="3000" step="10" value="1000">
-            <input type="text" id="rpm_target_val" value="1000">
-        </div>
+                <div id="gauges2">
+                    <canvas id="gauge_power"></canvas>
+                    <canvas id="gauge_torque"></canvas>
+                    <canvas id="gauge_fuel"></canvas>
+                </div>
+            </div>
 
-        <div class="fader">
-            <label>Fahrpedal (%)</label>
-            <input type="range" id="pedal_input" min="0.0" max="100.0" step="1.0" value="0.0">
-            <input type="text" id="pedal_input_val" value="0.0">
-        </div>
+            <div id="controls">
+                <div class="fader">
+                    <label>Ziel-Drehzahl (RPM)</label>
+                    <input type="range" id="rpm_target" min="0" max="3000" step="10" value="1000">
+                    <input type="text" id="rpm_target_val" value="1000">
+                </div>
 
-        <div class="fader">
-            <label>Tau Attack (s)</label>
-            <input type="range" id="tau_att" min="0.0" max="1.0" step="0.01" value="0.1">
-            <input type="text" id="tau_att_val" value="0.1">
-        </div>
+                <div class="fader">
+                    <label>Fahrpedal (%)</label>
+                    <input type="range" id="pedal_input" min="0" max="100" step="1" value="0">
+                    <input type="text" id="pedal_input_val" value="0">
+                </div>
 
-        <div class="fader">
-            <label>Tau Release (s)</label>
-            <input type="range" id="tau_rel" min="0.0" max="1.0" step="0.01" value="0.1">
-            <input type="text" id="tau_rel_val" value="0.1">
-        </div>
+                <div class="fader">
+                    <label>Tau Attack (s)</label>
+                    <input type="range" id="tau_att" min="0" max="1" step="0.01" value="0.1">
+                    <input type="text" id="tau_att_val" value="0.1">
+                </div>
 
-        <div class="fader">
-            <label>Pedal Gain (NV)</label>
-            <input type="range" id="pedal_gain" min="0.0" max="1.0" step="0.01" value="0.1">
-            <input type="text" id="pedal_gain_val" value="0.1">
+                <div class="fader">
+                    <label>Tau Release (s)</label>
+                    <input type="range" id="tau_rel" min="0" max="1" step="0.01" value="0.1">
+                    <input type="text" id="tau_rel_val" value="0.1">
+                </div>
+
+                <div class="fader">
+                    <label>Pedal Gain (NV)</label>
+                    <input type="range" id="pedal_gain" min="0" max="1" step="0.01" value="0.1">
+                    <input type="text" id="pedal_gain_val" value="0.1">
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -126,26 +139,38 @@ canvas {
 function createGauge(canvasId, label, minValue, maxValue, majorTicks, minorTicks, colorZones) {
     const canvas = document.getElementById(canvasId);
     const ctx = canvas.getContext("2d");
-    canvas.width = 200;
-    canvas.height = 200;
 
-    const CX = 100;
-    const CY = 100;
-    const R  = 95;
+    function resize() {
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
 
-    const circStart = 0.85;
-    const circEnd = 2.15;
-
-    // 210° → 330° (im Uhrzeigersinn)
-    function valueToAngle(v) {
-        const start = circStart * Math.PI;   // 210°
-        const end   = circEnd * Math.PI;   // 330°
-        const frac = (v - minValue) / (maxValue - minValue);
-        return start + frac * (end - start);
+        if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+        }
     }
 
     function drawBackground() {
-        ctx.clearRect(0,0,300,300);
+        resize();
+
+        const W = canvas.width;
+        const H = canvas.height;
+
+        const CX = W / 2;
+        const CY = H / 2;
+        const R  = Math.min(W, H) * 0.45;
+
+        ctx.clearRect(0, 0, W, H);
+
+        const circStart = 0.85;
+        const circEnd   = 2.15;
+
+        function valueToAngle(v) {
+            const start = circStart * Math.PI;
+            const end   = circEnd * Math.PI;
+            const frac = (v - minValue) / (maxValue - minValue);
+            return start + frac * (end - start);
+        }
 
         // Hintergrund
         ctx.beginPath();
@@ -153,30 +178,28 @@ function createGauge(canvasId, label, minValue, maxValue, majorTicks, minorTicks
         ctx.fillStyle = "#111";
         ctx.fill();
 
-        // ------------------------------------------------------------
-        // Farbige Bereiche (VW-Style)
-        // ------------------------------------------------------------
+        // Farbige Zonen
         for (const zone of colorZones) {
             const a1 = valueToAngle(zone.from);
             const a2 = valueToAngle(zone.to);
 
             ctx.beginPath();
             ctx.strokeStyle = zone.color;
-            ctx.lineWidth = 10;
-            ctx.arc(CX, CY, R - 5, a1, a2);
+            ctx.lineWidth = R * 0.1;
+            ctx.arc(CX, CY, R * 0.85, a1, a2);
             ctx.stroke();
         }
 
         // Skalenbogen
         ctx.strokeStyle = "#555";
-        ctx.lineWidth = 4;
+        ctx.lineWidth = R * 0.05;
         ctx.beginPath();
         ctx.arc(CX, CY, R, circStart*Math.PI, circEnd*Math.PI);
         ctx.stroke();
 
-        // Große Ticks + Labels
+        // Ticks + Labels
         ctx.fillStyle = "white";
-        ctx.font = "14px Arial";
+        ctx.font = `${R * 0.15}px Arial`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
@@ -187,40 +210,35 @@ function createGauge(canvasId, label, minValue, maxValue, majorTicks, minorTicks
             const val = minValue + i * majorStep;
             const ang = valueToAngle(val);
 
-            const x1 = CX + (R - 15) * Math.cos(ang);
-            const y1 = CY + (R - 15) * Math.sin(ang);
+            const x1 = CX + (R * 0.85) * Math.cos(ang);
+            const y1 = CY + (R * 0.85) * Math.sin(ang);
             const x2 = CX + R * Math.cos(ang);
             const y2 = CY + R * Math.sin(ang);
 
-            // großer Tick
             ctx.strokeStyle = "#ccc";
-            ctx.lineWidth = 3;
+            ctx.lineWidth = R * 0.03;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.stroke();
 
-            // Label (dezimal falls nötig)
-            const labelText =
-                (maxValue <= 10 ? val.toFixed(1) : Math.round(val)).toString();
-
-            const lx = CX + (R - 35) * Math.cos(ang);
-            const ly = CY + (R - 35) * Math.sin(ang);
+            const labelText = (maxValue <= 10 ? val.toFixed(1) : Math.round(val)).toString();
+            const lx = CX + (R * 0.65) * Math.cos(ang);
+            const ly = CY + (R * 0.65) * Math.sin(ang);
             ctx.fillText(labelText, lx, ly);
 
-            // kleine Ticks
             if (i < majorTicks - 1) {
                 for (let j = 1; j <= minorTicks; j++) {
                     const subVal = val + j * minorStep;
                     const subAng = valueToAngle(subVal);
 
-                    const sx1 = CX + (R - 10) * Math.cos(subAng);
-                    const sy1 = CY + (R - 10) * Math.sin(subAng);
+                    const sx1 = CX + (R * 0.9) * Math.cos(subAng);
+                    const sy1 = CY + (R * 0.9) * Math.sin(subAng);
                     const sx2 = CX + R * Math.cos(subAng);
                     const sy2 = CY + R * Math.sin(subAng);
 
                     ctx.strokeStyle = "#777";
-                    ctx.lineWidth = 1.5;
+                    ctx.lineWidth = R * 0.015;
                     ctx.beginPath();
                     ctx.moveTo(sx1, sy1);
                     ctx.lineTo(sx2, sy2);
@@ -229,10 +247,9 @@ function createGauge(canvasId, label, minValue, maxValue, majorTicks, minorTicks
             }
         }
 
-        // Gauge-Beschriftung
         ctx.fillStyle = "white";
-        ctx.font = "20px Arial";
-        ctx.fillText(label, CX, CY + 70);
+        ctx.font = `${R * 0.2}px Arial`;
+        ctx.fillText(label, CX, CY + R * 0.7);
     }
 
     drawBackground();
@@ -241,19 +258,33 @@ function createGauge(canvasId, label, minValue, maxValue, majorTicks, minorTicks
         draw: function(value) {
             drawBackground();
 
+            const W = canvas.width;
+            const H = canvas.height;
+            const CX = W / 2;
+            const CY = H / 2;
+            const R  = Math.min(W, H) * 0.45;
+
+            const circStart = 0.85;
+            const circEnd   = 2.15;
+
+            function valueToAngle(v) {
+                const start = circStart * Math.PI;
+                const end   = circEnd * Math.PI;
+                const frac = (v - minValue) / (maxValue - minValue);
+                return start + frac * (end - start);
+            }
+
             const ang = valueToAngle(value);
 
-            // Zeiger
             ctx.strokeStyle = "red";
-            ctx.lineWidth = 5;
+            ctx.lineWidth = R * 0.05;
             ctx.beginPath();
             ctx.moveTo(CX, CY);
-            ctx.lineTo(CX + (R-5)*Math.cos(ang), CY + (R-5)*Math.sin(ang));
+            ctx.lineTo(CX + (R * 0.95) * Math.cos(ang), CY + (R * 0.95) * Math.sin(ang));
             ctx.stroke();
 
-            // Mittelpunkt
             ctx.beginPath();
-            ctx.arc(CX, CY, 5, 0, 2*Math.PI);
+            ctx.arc(CX, CY, R * 0.05, 0, 2*Math.PI);
             ctx.fillStyle = "black";
             ctx.fill();
         }
@@ -300,21 +331,22 @@ function bindFader(rangeId, textId) {
     const range = document.getElementById(rangeId);
     const text = document.getElementById(textId);
 
-    // Slider → Textfeld
+    function send() {
+        sendToServer(rangeId, parseFloat(range.value));
+    }
+
     range.addEventListener("input", () => {
         text.value = range.value;
+        send();
     });
 
-    // Textfeld: Komma → Punkt während der Eingabe
     text.addEventListener("input", () => {
         text.value = text.value.replace(",", ".");
     });
 
-    // Textfeld: erst bei Verlassen validieren
     text.addEventListener("change", () => {
         let raw = text.value;
 
-        // Leere Eingabe → auf Sliderwert zurücksetzen
         if (raw.trim() === "") {
             text.value = range.value;
             return;
@@ -322,23 +354,28 @@ function bindFader(rangeId, textId) {
 
         let num = parseFloat(raw);
         if (isNaN(num)) {
-            // Ungültig → alten Wert wiederherstellen
             text.value = range.value;
             return;
         }
 
-        // Min/Max vom Slider übernehmen
         const min = parseFloat(range.min);
         const max = parseFloat(range.max);
 
         if (num < min) num = min;
         if (num > max) num = max;
 
-        // Slider aktualisieren
         range.value = num;
-
-        // Textfeld sauber formatieren
         text.value = num;
+
+        send();
+    });
+}
+
+function sendToServer(name, value) {
+    fetch("/update", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ [name]: value })
     });
 }
 
@@ -348,6 +385,27 @@ bindFader("pedal_input", "pedal_input_val");
 bindFader("tau_att", "tau_att_val");
 bindFader("tau_rel", "tau_rel_val");
 bindFader("pedal_gain", "pedal_gain_val");
+
+function updateScale() {
+    const baseWidth = 950;
+    const baseHeight = 600;
+
+    let scale = Math.min(
+        window.innerWidth / baseWidth,
+        window.innerHeight / baseHeight
+    );
+
+    scale = Math.min(scale, 1);
+
+    document.documentElement.style.setProperty('--scale', scale);
+}
+
+window.addEventListener('resize', updateScale);
+updateScale();
+
+window.addEventListener('resize', updateScale);
+updateScale();
+
 
 // ------------------------------------------------------------
 // GAUGES ERZEUGEN (VW-Style Farbzonen)
