@@ -11,6 +11,9 @@ params = {
 "tau_att": 0.1,
 "tau_rel": 0.1,
 "pedal_gain": 0.0,
+"toggle_const_RPM": 0,
+"toggle_emergency_off": 0,
+"toggle_tbd": 0
 }
 
 print(params.keys())
@@ -43,7 +46,7 @@ def update():
     for key, value in data.items():
         if key in params.keys():
             params[key] = value
-            print("\n Updated params:" + str(params) + "\n")
+            #print("\n Updated params:" + str(params) + "\n")
     return jsonify(success=True)
 
 @app.get("/values")
@@ -59,27 +62,36 @@ def stream():
 
         pedalPercent = 0.0
         engineRPM = 0.0
-        boost = 0.0
+        velocityKmph = 0.0
+        enginePowerPercent = 0.0
+        torqueNM = 0.0
+        fuelPercent = 0.0
+        
+        canMsg = None
 
-        if "linux" in sys.platform.lower():
-            while True:
-                msg = CAN_BUS_INST.recv(timeout=0.01)
-                if msg is None:
-                    continue
+        while True:
 
-                if msg.arbitration_id == 0x280:   # Pedal
+            if "linux" in sys.platform.lower():
+                canMsg = CAN_BUS_INST.recv(timeout=0.01)
+                if canMsg is not None:
+                    if canMsg.arbitration_id == 0x280:   # Pedal
+                        pedalPercent = canMsg.data[5] * 100.0 / 0xFA
+                        engineRPM = ( (canMsg.data[3]<<8) + canMsg.data[2] ) * 0.25
+            else:
+                time.sleep(0.01)
+                engineRPM = params["rpm_target"]
+                pedalPercent = params["pedal_input"]
 
-                    pedalPercent = msg.data[5] * 100.0 / 0xFA
-                    engineRPM = ( (msg.data[3]<<8) + msg.data[2] ) * 0.25
-                    boost = 0.0
+            payload = {
+                "pedal": pedalPercent,
+                "rpm": engineRPM,
+                "kmph": velocityKmph,
+                "power": enginePowerPercent,
+                "torque": torqueNM,
+                "fuel": fuelPercent,
+            }
 
-                    payload = {
-                        "pedal": pedalPercent,
-                        "rpm": engineRPM,
-                        "boost": boost
-                    }
-
-                    yield f"data: {json.dumps(payload)}\n\n"
+            yield f"data: {json.dumps(payload)}\n\n"
 
     return Response(event_stream(), mimetype="text/event-stream")
 

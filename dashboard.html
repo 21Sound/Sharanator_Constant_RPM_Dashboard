@@ -20,7 +20,7 @@ html, body {
     left: 50%;
     top: 50%;
     width: 900px;
-    height: 500px;
+    height: 550px;
     transform-origin: center center;
     transform: translate(-50%, -50%) scale(var(--scale));
     overflow: hidden;
@@ -41,16 +41,22 @@ html, body {
 }
 
 /* Gauges links */
-#gauges {
+#gaugesAndToggles {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 10px;
 }
 
 #gauges1, #gauges2 {
     display: flex;
     flex-direction: row;
     gap: 20px;
+}
+
+#toggles1 {
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
 }
 
 /* Controls rechts */
@@ -74,6 +80,58 @@ canvas {
     background: #111;
 }
 
+.toggle-section {
+    margin-top: 0px;
+    text-align: center;
+}
+
+.toggle-section h3 {
+    margin-bottom: 5px;
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.toggle input {
+    display: none;
+}
+
+.toggle .slider {
+    width: 45px;
+    height: 22px;
+    background: #ccc;
+    border-radius: 20px;
+    position: relative;
+    transition: 0.3s;
+}
+
+.toggle .slider::before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: 0.3s;
+}
+
+.toggle input:checked + .slider {
+    background: #4caf50;
+}
+
+.toggle input:checked + .slider::before {
+    transform: translateX(23px);
+}
+
 </style>
 </head>
 <body>
@@ -82,7 +140,7 @@ canvas {
     <div id="wrapper">
         <div id="dashboard">
 
-            <div id="gauges">
+            <div id="gaugesAndToggles">
                 <div id="gauges1">
                     <canvas id="gauge_pedal"></canvas>
                     <canvas id="gauge_rpm"></canvas>
@@ -94,17 +152,35 @@ canvas {
                     <canvas id="gauge_torque"></canvas>
                     <canvas id="gauge_fuel"></canvas>
                 </div>
+
+                <div id="toggles1">
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle_const_RPM">
+                        <span class="slider"></span>
+                        Constant RPM Mode
+                    </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle_emergency_off">
+                        <span class="slider"></span>
+                        Emergency Off
+                    </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle_tbd">
+                        <span class="slider"></span>
+                        To Be Defined
+                    </label>
+                </div>
             </div>
 
             <div id="controls">
                 <div class="fader">
-                    <label>Ziel-Drehzahl (RPM)</label>
-                    <input type="range" id="rpm_target" min="0" max="3000" step="10" value="1000">
+                    <label>Destination Revs (RPM)</label>
+                    <input type="range" id="rpm_target" min="900" max="2000" step="10" value="1000">
                     <input type="text" id="rpm_target_val" value="1000">
                 </div>
 
                 <div class="fader">
-                    <label>Fahrpedal (%)</label>
+                    <label>Throttle Pedal Input (%)</label>
                     <input type="range" id="pedal_input" min="0" max="100" step="1" value="0">
                     <input type="text" id="pedal_input_val" value="0">
                 </div>
@@ -371,6 +447,14 @@ function bindFader(rangeId, textId) {
     });
 }
 
+function bindToggle(toggleId) {
+    const el = document.getElementById(toggleId);
+
+    el.addEventListener("change", () => {
+        sendToServer(toggleId, el.checked ? 1 : 0);
+    });
+}
+
 function sendToServer(name, value) {
     fetch("/update", {
         method: "POST",
@@ -385,6 +469,10 @@ bindFader("pedal_input", "pedal_input_val");
 bindFader("tau_att", "tau_att_val");
 bindFader("tau_rel", "tau_rel_val");
 bindFader("pedal_gain", "pedal_gain_val");
+
+bindToggle("toggle_const_RPM");
+bindToggle("toggle_emergency_off");
+bindToggle("toggle_tbd");
 
 function updateScale() {
     const baseWidth = 950;
@@ -413,7 +501,7 @@ updateScale();
 
 // Pedal: Grün 0–60, Gelb 60–80, Rot 80–100
 const pedalGauge = createGauge(
-    "gauge_pedal", "Pedalstellung (%)",
+    "gauge_pedal", "Pedal Output (%)",
     0, 100, 6, 4,
     [
         {from:0, to:80, color:"#0f0"},
@@ -424,7 +512,7 @@ const pedalGauge = createGauge(
 
 // RPM: Grün 0–3000, Gelb 3000–4000, Rot 4000–5000
 const rpmGauge = createGauge(
-    "gauge_rpm", "Drehzahl (U/min)",
+    "gauge_rpm", "Revs (RPM)",
     0, 5000, 6, 4,
     [
         {from:0, to:3500, color:"#0f0"},
@@ -435,7 +523,7 @@ const rpmGauge = createGauge(
 
 // Boost: Grün 0–1.2, Gelb 1.2–1.8, Rot 1.8–2.5
 const kmphGauge = createGauge(
-    "gauge_kmph", "Geschw. (km/h)",
+    "gauge_kmph", "Velocity (km/h)",
     0, 200, 6, 4,
     [
         {from:0, to:160, color:"#0f0"},
@@ -445,7 +533,7 @@ const kmphGauge = createGauge(
 );
 
 const powerGauge = createGauge(
-    "gauge_power", "Motorlast (%)",
+    "gauge_power", "Engine Load (%)",
     0, 100, 6, 4,
     [
         {from:0, to:80, color:"#0f0"},
@@ -455,7 +543,7 @@ const powerGauge = createGauge(
 );
 
 const torqueGauge = createGauge(
-    "gauge_torque", "Drehmoment (NM)",
+    "gauge_torque", "Torque (NM)",
     0, 400, 6, 4,
     [
         {from:0, to:300, color:"#0f0"},
@@ -465,7 +553,7 @@ const torqueGauge = createGauge(
 );
 
 const fuelGauge = createGauge(
-    "gauge_fuel", "Tank (%)",
+    "gauge_fuel", "Fuel Level (%)",
     0, 100, 6, 4,
     [
         {from:0, to:10, color:"#f00"},
@@ -505,8 +593,12 @@ evtSource.onmessage = function(event) {
 
     pedalGauge.draw(data.pedal);
     rpmGauge.draw(data.rpm);
-    boostGauge.draw(data.boost);
+    kmphGauge.draw(data.kmph);
+    powerGauge.draw(data.power);
+    torqueGauge.draw(data.torque);
+    fuelGauge.draw(data.fuel);
 };
+
 </script>
 
 </body>
