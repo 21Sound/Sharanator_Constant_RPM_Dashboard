@@ -12,6 +12,12 @@ import adafruit_mcp4728
 i2c = busio.I2C(board.SCL, board.SDA)
 mcp = adafruit_mcp4728.MCP4728(i2c)
 
+# Vref auf VDD (5V) setzen
+mcp.channel_a.vref = adafruit_mcp4728.Vref.VDD
+mcp.channel_b.vref = adafruit_mcp4728.Vref.VDD
+mcp.channel_c.vref = adafruit_mcp4728.Vref.VDD
+mcp.channel_d.vref = adafruit_mcp4728.Vref.VDD
+
 mcp.channel_a.normalized_value = 0.99
 mcp.channel_b.normalized_value = 0.99
 mcp.channel_c.normalized_value = 0.0
