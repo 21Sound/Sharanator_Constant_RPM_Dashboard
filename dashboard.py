@@ -16,11 +16,18 @@ params = {
 "toggle_tbd": 0
 }
 
-print(params.keys())
-
-print(sys.platform.lower())
-
 if "linux" in sys.platform.lower():
+    import board, busio
+    import adafruit_mcp4728
+
+    i2c = busio.I2C(board.SCL, board.SDA)
+    mcp = adafruit_mcp4728.MCP4728(i2c)
+
+    mcp.channel_a.normalized_value = 0.17
+    mcp.channel_b.normalized_value = 0.12
+    mcp.channel_c.normalized_value = 0.0
+    mcp.channel_d.normalized_value = 0.0
+
     os.system("sudo ip link set can0 down")
     os.system("sudo ip link set can0 up type can bitrate 500000")
 
@@ -28,7 +35,7 @@ app = Flask("Sharanator Dashboard")
 
 # CAN-Interface öffnen
 if "linux" in sys.platform.lower():
-    CAN_BUS_INST = can.interface.Bus(channel='can0', bustype='socketcan')
+    CAN_BUS_INST = can.interface.Bus(channel='can0', interface='socketcan')
 
 # ------------------------------------------------------------
 # HTML wird direkt eingebettet (du kannst es auch aus Datei laden)
@@ -47,6 +54,15 @@ def update():
         if key in params.keys():
             params[key] = value
             #print("\n Updated params:" + str(params) + "\n")
+
+            if key == "pedal_input":
+                if value > 0.01:
+                        mcp.channel_a.normalized_value = 0.17+value*0.01*0.63
+                        mcp.channel_b.normalized_value = 0.9
+                else:
+                        mcp.channel_a.normalized_value = 0.17
+                        mcp.channel_b.normalized_value = 0.12
+
     return jsonify(success=True)
 
 @app.get("/values")
@@ -77,6 +93,9 @@ def stream():
                     if canMsg.arbitration_id == 0x280:   # Pedal
                         pedalPercent = canMsg.data[5] * 100.0 / 0xFA
                         engineRPM = ( (canMsg.data[3]<<8) + canMsg.data[2] ) * 0.25
+                else:
+                    engineRPM = params["rpm_target"]
+                    pedalPercent = params["pedal_input"]
             else:
                 time.sleep(0.01)
                 engineRPM = params["rpm_target"]

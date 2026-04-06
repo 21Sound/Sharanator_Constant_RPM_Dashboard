@@ -8,21 +8,12 @@
 
 import board, busio
 import adafruit_mcp4728
-import time
 
 i2c = busio.I2C(board.SCL, board.SDA)
 mcp = adafruit_mcp4728.MCP4728(i2c)
 
-mcp.channel_c.normalized_value = 0.0
-mcp.channel_d.normalized_value = 0.0
-
-for i in range(10000):
-    # alle Kanäle aktiv, Vref = VDD, Gain = 1x
-    mcp.channel_a.normalized_value = (100*i%1000) / 1000.0
-    mcp.channel_b.normalized_value = (100*i%1000) / 1000.0
-
-mcp.channel_a.normalized_value = 0.0
-mcp.channel_b.normalized_value = 0.0
+mcp.channel_a.normalized_value = 0.99
+mcp.channel_b.normalized_value = 0.99
 mcp.channel_c.normalized_value = 0.0
 mcp.channel_d.normalized_value = 0.0
 
