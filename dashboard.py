@@ -23,8 +23,14 @@ if "linux" in sys.platform.lower():
     i2c = busio.I2C(board.SCL, board.SDA)
     mcp = adafruit_mcp4728.MCP4728(i2c)
 
-    mcp.channel_a.normalized_value = 0.17
-    mcp.channel_b.normalized_value = 0.12
+    # Vref auf VDD (5V) setzen
+    mcp.channel_a.vref = adafruit_mcp4728.Vref.VDD
+    mcp.channel_b.vref = adafruit_mcp4728.Vref.VDD
+    mcp.channel_c.vref = adafruit_mcp4728.Vref.VDD
+    mcp.channel_d.vref = adafruit_mcp4728.Vref.VDD
+
+    mcp.channel_a.normalized_value = 0.07
+    mcp.channel_b.normalized_value = 0.05
     mcp.channel_c.normalized_value = 0.0
     mcp.channel_d.normalized_value = 0.0
 
@@ -57,11 +63,11 @@ def update():
 
             if key == "pedal_input":
                 if value > 0.01:
-                        mcp.channel_a.normalized_value = 0.17+value*0.01*0.63
-                        mcp.channel_b.normalized_value = 0.9
+                        mcp.channel_a.normalized_value = 0.07+value*0.01*0.73
+                        mcp.channel_b.normalized_value = 0.8
                 else:
-                        mcp.channel_a.normalized_value = 0.17
-                        mcp.channel_b.normalized_value = 0.12
+                        mcp.channel_a.normalized_value = 0.07
+                        mcp.channel_b.normalized_value = 0.05
 
     return jsonify(success=True)
 
@@ -96,11 +102,16 @@ def stream():
                 else:
                     engineRPM = params["rpm_target"]
                     pedalPercent = params["pedal_input"]
+
+                if engineRPM>2100:
+                    mcp.channel_a.normalized_value = 0.07
+                    mcp.channel_b.normalized_value = 0.05
+
             else:
                 time.sleep(0.01)
                 engineRPM = params["rpm_target"]
                 pedalPercent = params["pedal_input"]
-
+            
             payload = {
                 "pedal": pedalPercent,
                 "rpm": engineRPM,
